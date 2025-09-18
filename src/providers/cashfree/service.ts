@@ -103,11 +103,17 @@ class CashfreePaymentProviderService extends AbstractPaymentProvider<Options> {
             const status = response?.data?.order_status
 
             switch (status) {
-                case "PAID": return { data: { ...response.data, id: externalId } }
-                case "ACTIVE": throw new MedusaError(MedusaError.Types.NOT_FOUND, "Pending Payment. Try again later.")
-                case "EXPIRED": throw new MedusaError(MedusaError.Types.NOT_FOUND, "Payment order expired.")
-                case "TERMINATED": throw new MedusaError(MedusaError.Types.NOT_FOUND, "Payment terminated.")
-                default: throw new MedusaError(MedusaError.Types.NOT_FOUND, "Payment not captured.")
+                case "PAID":
+                    return { data: { ...response.data, id: externalId } }
+                case "ACTIVE":
+                case "PENDING":
+                    throw new MedusaError(MedusaError.Types.NOT_FOUND, "Pending Payment. Try again later.")
+                case "EXPIRED":
+                    throw new MedusaError(MedusaError.Types.NOT_FOUND, "Payment order expired.")
+                case "TERMINATED":
+                    throw new MedusaError(MedusaError.Types.NOT_FOUND, "Payment terminated.")
+                default:
+                    throw new MedusaError(MedusaError.Types.NOT_FOUND, "Payment not captured.")
             }
         } catch (error) {
             if (!(error instanceof MedusaError)) {
@@ -166,10 +172,21 @@ class CashfreePaymentProviderService extends AbstractPaymentProvider<Options> {
             const status = response.data?.order_status || "UNKNOWN"
 
             let medusaStatus: GetPaymentStatusOutput["status"]
+
             switch (status) {
-                case "ACTIVE": medusaStatus = "pending"; break
-                case "PAID": medusaStatus = "captured"; break
-                case "EXPIRED": case "TERMINATED": medusaStatus = "canceled"; break
+                case "ACTIVE":
+                    medusaStatus = "pending";
+                    break;
+                case "PENDING":
+                    medusaStatus = "pending";
+                    break;
+                case "PAID":
+                    medusaStatus = "captured";
+                    break;
+                case "EXPIRED":
+                case "TERMINATED":
+                    medusaStatus = "canceled";
+                    break;
                 default: medusaStatus = "error"
             }
 
@@ -203,8 +220,11 @@ class CashfreePaymentProviderService extends AbstractPaymentProvider<Options> {
         const { data } = input
         const externalId = data?.id
 
-        if (data) {
-            throw new MedusaError(MedusaError.Types.INVALID_DATA, "Cashfree updatePayment requires order_id")
+        if (!externalId) {
+            throw new MedusaError(
+                MedusaError.Types.INVALID_DATA,
+                "Cashfree updatePayment requires order_id"
+            )
         }
 
         try {
@@ -221,6 +241,7 @@ class CashfreePaymentProviderService extends AbstractPaymentProvider<Options> {
         } catch (err: any) {
 
             this.logger_.error(`Failed to initiate new order: ${err.message}`)
+
             throw new MedusaError(
                 MedusaError.Types.NOT_FOUND,
                 "Failed to update payment. Please try again."
@@ -235,8 +256,6 @@ class CashfreePaymentProviderService extends AbstractPaymentProvider<Options> {
             throw new MedusaError(MedusaError.Types.INVALID_DATA, "Invalid payment data for refund");
         }
 
-        this.logger_.info(`Initiating refund for order ${JSON.stringify(input, null, 2)} with amount ${amount}`);
-
         const externalId = data.id as string;
         const order_id = data.order_id as string;
         const refundId = generateRefundID(order_id);
@@ -250,10 +269,6 @@ class CashfreePaymentProviderService extends AbstractPaymentProvider<Options> {
         try {
 
             const res = await this.client.PGOrderCreateRefund(externalId, refundReq)
-
-            this.logger_.info(
-                `Refund for order ${order_id} API response: ${JSON.stringify(res.data)}`
-            )
 
             switch (res.data.refund_status) {
                 case "SUCCESS":
@@ -305,9 +320,8 @@ class CashfreePaymentProviderService extends AbstractPaymentProvider<Options> {
             )
         }
 
+        // temp cast
         const orderData: any = data.data
-
-        this.logger_.info(`Received Cashfree webhook: ${JSON.stringify(payload.data)}`)
 
         try {
             switch (payload.data.type) {

@@ -19,6 +19,11 @@ Accept payments from customers through Cashfree's robust payment gateway.
 - [MedusaJS V2](https://docs.medusajs.com/) store
 - [Cashfree Payments](https://merchant.cashfree.com/) merchant account
 
+## 🚧 To Do:
+
+- Refactor codebase.
+- Improvise refund setup.
+
 ## 🛠️ Installation
 
 ### Step 1: Install the Plugin
