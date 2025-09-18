@@ -1,64 +1,182 @@
-<p align="center">
-  <a href="https://www.medusajs.com">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/59018053/229103275-b5e482bb-4601-46e6-8142-244f531cebdb.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://user-images.githubusercontent.com/59018053/229103726-e5b529a3-9b3f-4970-8a1f-c6af37f087bf.svg">
-    <img alt="Medusa logo" src="https://user-images.githubusercontent.com/59018053/229103726-e5b529a3-9b3f-4970-8a1f-c6af37f087bf.svg">
-    </picture>
-  </a>
-</p>
-<h1 align="center">
-  Medusa Plugin Starter
-</h1>
+# 🚀 Medusa Cashfree Payment Plugin
 
-<h4 align="center">
-  <a href="https://docs.medusajs.com">Documentation</a> |
-  <a href="https://www.medusajs.com">Website</a>
-</h4>
+> **Seamlessly integrate Cashfree Payments with MedusaJS V2 e-commerce stores**
 
-<p align="center">
-  Building blocks for digital commerce
-</p>
-<p align="center">
-  <a href="https://github.com/medusajs/medusa/blob/master/CONTRIBUTING.md">
-    <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat" alt="PRs welcome!" />
-  </a>
-    <a href="https://www.producthunt.com/posts/medusa"><img src="https://img.shields.io/badge/Product%20Hunt-%231%20Product%20of%20the%20Day-%23DA552E" alt="Product Hunt"></a>
-  <a href="https://discord.gg/xpCwq3Kfn8">
-    <img src="https://img.shields.io/badge/chat-on%20discord-7289DA.svg" alt="Discord Chat" />
-  </a>
-  <a href="https://twitter.com/intent/follow?screen_name=medusajs">
-    <img src="https://img.shields.io/twitter/follow/medusajs.svg?label=Follow%20@medusajs" alt="Follow @medusajs" />
-  </a>
-</p>
+Accept payments from customers through Cashfree's robust payment gateway.
+---
 
-## Compatibility
+## ✨ Features
 
-This starter is compatible with versions >= 2.4.0 of `@medusajs/medusa`. 
+- 💳 **Multiple Payment Methods** - UPI, Credit/Debit Cards, Net Banking, Paylater, EMI and Wallets
+- 💸 **Easy Refunds** - Process refunds directly from Medusa admin panel
+- 🔒 **Secure Transactions** - Webhook verification and PCI DSS compliance
+- 🌍 **Dual Environment** - Sandbox testing and production ready
+- ⚡ **Real-time Updates** - Instant payment status synchronization
+- 💲 **Cashfree server sdk** - under the hood.
 
-## Getting Started
+## 📋 Prerequisites
 
-Visit the [Quickstart Guide](https://docs.medusajs.com/learn/installation) to set up a server.
+- [MedusaJS V2](https://docs.medusajs.com/) store
+- [Cashfree Payments](https://merchant.cashfree.com/) merchant account
 
-Visit the [Plugins documentation](https://docs.medusajs.com/learn/fundamentals/plugins) to learn more about plugins and how to create them.
+## 🛠️ Installation
 
-Visit the [Docs](https://docs.medusajs.com/learn/installation#get-started) to learn more about our system requirements.
+### Step 1: Install the Plugin
 
-## What is Medusa
+Choose your preferred package manager:
 
-Medusa is a set of commerce modules and tools that allow you to build rich, reliable, and performant commerce applications without reinventing core commerce logic. The modules can be customized and used to build advanced ecommerce stores, marketplaces, or any product that needs foundational commerce primitives. All modules are open-source and freely available on npm.
+```bash
+# npm
+npm install medusa-cashfree-payment-plugin
 
-Learn more about [Medusa’s architecture](https://docs.medusajs.com/learn/introduction/architecture) and [commerce modules](https://docs.medusajs.com/learn/fundamentals/modules/commerce-modules) in the Docs.
+# yarn  
+yarn add medusa-cashfree-payment-plugin
 
-## Community & Contributions
+# pnpm
+pnpm add medusa-cashfree-payment-plugin
+```
 
-The community and core team are available in [GitHub Discussions](https://github.com/medusajs/medusa/discussions), where you can ask for support, discuss roadmap, and share ideas.
+### Step 2: Configure Plugin
 
-Join our [Discord server](https://discord.com/invite/medusajs) to meet other community members.
+Add the plugin to your `medusa-config.js`:
 
-## Other channels
+```javascript
+const plugins = [
+  // ... other plugins
+  {
+    resolve: `medusa-cashfree-payment-plugin`,
+    options: {
+      app_id: process.env.CASHFREE_APP_ID,
+      secret_key: process.env.CASHFREE_SECRET_KEY,
+      environment: process.env.CASHFREE_ENVIRONMENT, // "sandbox" or "production"
+      webhook_secret: process.env.CASHFREE_WEBHOOK_SECRET,
+      return_url: process.env.CASHFREE_RETURN_URL,
+      notify_url: process.env.CASHFREE_NOTIFY_URL,
+    },
+  },
+];
+```
 
-- [GitHub Issues](https://github.com/medusajs/medusa/issues)
-- [Twitter](https://twitter.com/medusajs)
-- [LinkedIn](https://www.linkedin.com/company/medusajs)
-- [Medusa Blog](https://medusajs.com/blog/)
+### Step 3: Environment Variables
+
+Create or update your `.env` file:
+
+```env
+# Cashfree Configuration
+CASHFREE_APP_ID=your_app_id_here
+CASHFREE_SECRET_KEY=your_secret_key_here
+CASHFREE_ENVIRONMENT=sandbox
+CASHFREE_WEBHOOK_SECRET=your_webhook_secret_here
+CASHFREE_RETURN_URL=https://your-store-domain.com/processing/order
+CASHFREE_NOTIFY_URL=https://your-store-domain.com/hooks/payment/cashfree_cashfree
+```
+
+> ⚠️ **Security Note**: Never commit your production credentials to version control.
+
+## ⚙️ Configuration Options
+
+| Option | Type | Required | Default | Description |
+|--------|------|----------|---------|-------------|
+| `app_id` | string | ✅ | - | Your Cashfree App ID |
+| `secret_key` | string | ✅ | - | Your Cashfree Secret Key |
+| `environment` | string | ❌ | `sandbox` | Environment (`sandbox` or `production`) |
+| `webhook_secret` | string | ❌ | - | Webhook secret for signature verification |
+| `return_url` | string | ❌ | - | The URL to redirect the customer to after payment is complete. |
+| `notify_url` | string | ❌ | - | The URL to send webhook notifications to. This will be used by Cashfree to send payment status updates. |
+
+## 🎯 Setup Guide
+
+### Enable Payment Provider
+
+1. Navigate to **Medusa Admin → Settings → Regions**
+2. Select your target region - India
+3. In **Payment Providers**, select `cashfree`
+4. Click **Save Changes**
+
+### Configure Webhooks
+
+1. Go to [Cashfree Dashboard](https://merchant.cashfree.com/) → **Developers → Webhooks**
+2. Click **Add Webhook**
+3. Configure webhook URL. You can use the `notify_url` from your `.env` file or another URL.
+   ```
+   https://your-store-domain.com/hooks/payment/cashfree_cashfree
+   ```
+4. Select these events:
+   - `PAYMENT_SUCCESS_WEBHOOK`
+   - `PAYMENT_FAILED_WEBHOOK`
+5. Add your webhook secret to .env - `(CASHFREE_WEBHOOK_SECRET)`
+6. Save configuration
+
+
+##### Note -
+
+**`return_url`:** The `return_url` is where the customer is redirected after completing the payment. It's important to set this to a page on your storefront that can handle the order completion process.
+
+**`notify_url`:** This is the webhook endpoint of your server where Cashfree will send automatic updates (like payment success, failure, or refund) for each order. Default is `https://yoursite.com/hooks/payment/cashfree_cashfree`.
+
+## 🔧 API Reference
+
+This plugin implements the complete `AbstractPaymentProvider` interface:
+
+### Core Methods
+- `initiatePayment()` - Initialize payment session
+- `authorizePayment()` - Authorize payment amount
+- `capturePayment()` - Capture authorized payment
+- `cancelPayment()` - Cancel pending payment
+- `refundPayment()` - Process refunds
+
+### Utility Methods  
+- `getPaymentStatus()` - Get current payment status
+- `retrievePayment()` - Fetch payment details
+- `updatePayment()` - Update payment information
+- `deletePayment()` - Remove payment record
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**Plugin not appearing in admin**
+```bash
+# Restart your Medusa server
+npm run dev
+```
+
+**Webhook verification failing**
+- Ensure webhook secret matches in both Cashfree dashboard and `.env`
+- Check webhook URL is publicly accessible
+
+**Payment status not updating**
+- Verify webhook events are properly configured
+- Check server logs for webhook errors
+
+### Getting Help
+
+- 📖 [Cashfree Documentation](https://docs.cashfree.com/)
+- 💬 [MedusaJS Discord](https://discord.gg/medusajs)
+- 🐛 [Report Issues](https://github.com/SAM-AEL/medusa-cashfree-payment-plugin/issues)
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [MedusaJS](https://medusajs.com/) - for the best open-source e-commerce platform.
+- [Cashfree](https://cashfree.com/) - for providing reliable payment processing service.
+
+---
+
+**[⭐ Star this repo](https://github.com/SAM-AEL/medusa-cashfree-payment-plugin)** if you found it helpful!
+
+---
+[![npm version](https://badge.fury.io/js/medusa-cashfree-payment-plugin.svg)](https://badge.fury.io/js/medusa-cashfree-payment-plugin) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)

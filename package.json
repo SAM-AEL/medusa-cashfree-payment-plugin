@@ -1,8 +1,10 @@
 {
   "name": "medusa-cashfree-payment-plugin",
-  "version": "0.0.1",
-  "description": "A starter for Medusa plugins.",
-  "author": "Medusa (https://medusajs.com)",
+  "version": "1.0.0",
+  "description": "Cashfree Payment Plugin for MedusaJS 2",
+  "author": "SAM-AEL",
+  "homepage": "https://github.com/SAM-AEL",
+  "repository": "https://github.com/SAM-AEL/medusa-cashfree-payment-plugin",
   "license": "MIT",
   "files": [
     ".medusa/server"
@@ -18,9 +20,9 @@
   "keywords": [
     "medusa",
     "plugin",
-    "medusa-plugin-other",
     "medusa-plugin",
-    "medusa-v2"
+    "medusa-v2",
+    "medusa-plugin-payment"
   ],
   "scripts": {
     "build": "medusa plugin:build",
@@ -28,19 +30,19 @@
     "prepublishOnly": "medusa plugin:build"
   },
   "devDependencies": {
-    "@medusajs/admin-sdk": "2.4.0",
-    "@medusajs/cli": "2.4.0",
-    "@medusajs/framework": "2.4.0",
-    "@medusajs/medusa": "2.4.0",
-    "@medusajs/test-utils": "2.4.0",
+    "@medusajs/admin-sdk": "2.10.2",
+    "@medusajs/cli": "2.10.2",
+    "@medusajs/framework": "2.10.2",
+    "@medusajs/icons": "2.10.2",
+    "@medusajs/medusa": "2.10.2",
+    "@medusajs/test-utils": "2.10.2",
     "@medusajs/ui": "4.0.4",
-    "@medusajs/icons": "2.4.0",
     "@mikro-orm/cli": "6.4.3",
     "@mikro-orm/core": "6.4.3",
     "@mikro-orm/knex": "6.4.3",
     "@mikro-orm/migrations": "6.4.3",
     "@mikro-orm/postgresql": "6.4.3",
-    "@swc/core": "1.5.7",
+    "@swc/core": "1.13.5",
     "@types/node": "^20.0.0",
     "@types/react": "^18.3.2",
     "@types/react-dom": "^18.2.25",
@@ -55,13 +57,13 @@
     "yalc": "^1.0.0-pre.53"
   },
   "peerDependencies": {
-    "@medusajs/admin-sdk": "2.4.0",
-    "@medusajs/cli": "2.4.0",
-    "@medusajs/framework": "2.4.0",
-    "@medusajs/test-utils": "2.4.0",
-    "@medusajs/medusa": "2.4.0",
+    "@medusajs/admin-sdk": "2.10.2",
+    "@medusajs/cli": "2.10.2",
+    "@medusajs/framework": "2.10.2",
+    "@medusajs/icons": "2.10.2",
+    "@medusajs/medusa": "2.10.2",
+    "@medusajs/test-utils": "2.10.2",
     "@medusajs/ui": "4.0.3",
-    "@medusajs/icons": "2.4.0",
     "@mikro-orm/cli": "6.4.3",
     "@mikro-orm/core": "6.4.3",
     "@mikro-orm/knex": "6.4.3",
@@ -72,5 +74,8 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "cashfree-pg": "^5.0.8"
   }
 }
