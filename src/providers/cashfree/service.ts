@@ -229,39 +229,59 @@ class CashfreePaymentProviderService extends AbstractPaymentProvider<Options> {
     }
 
     async refundPayment(input: RefundPaymentInput): Promise<RefundPaymentOutput> {
+        const { amount, data, context } = input;
 
-        const { amount, data } = input
-
-        if (!data || !data.id || !data.order_id) {
-            throw new MedusaError(MedusaError.Types.INVALID_DATA, "Invalid payment data for refund")
+        if (!data?.id || !data?.order_id) {
+            throw new MedusaError(MedusaError.Types.INVALID_DATA, "Invalid payment data for refund");
         }
 
-        const externalId = data?.id as string
-        const order_id: string = data?.order_id as string
-        const refundId = generateRefundID(order_id)
+        this.logger_.info(`Initiating refund for order ${JSON.stringify(input, null, 2)} with amount ${amount}`);
+
+        const externalId = data.id as string;
+        const order_id = data.order_id as string;
+        const refundId = generateRefundID(order_id);
 
         const refundReq: OrderCreateRefundRequest = {
             refund_id: refundId,
             refund_amount: new BigNumber(amount).numeric,
-            refund_note: "Refund for Order" + order_id
+            refund_note: `Refund for ${order_id}`,
         };
 
         try {
-            const createRefundRequest = await this.client.PGOrderCreateRefund(externalId, refundReq)
 
-            if (createRefundRequest.data.refund_status === ("SUCCESS")) {
-                return { data }
+            const res = await this.client.PGOrderCreateRefund(externalId, refundReq)
 
-            } else {
-                // if status is PENDING, CANCELLED, ONHOLD
-                throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "Error refunding Cashfree order.")
+            this.logger_.info(
+                `Refund for order ${order_id} API response: ${JSON.stringify(res.data)}`
+            )
+
+            switch (res.data.refund_status) {
+                case "SUCCESS":
+                case "PENDING":
+                case "ONHOLD":
+                    return {
+                        data: {
+                            ...data,
+                            refunds: [
+                                ...(Array.isArray(data?.refunds) ? data.refunds : []),
+                                {
+                                    ...res.data
+                                },
+                            ],
+                            last_refund_index:
+                                (Array.isArray(data?.refunds) ? data.refunds.length : 0),
+                        },
+                    }
+                default:
+                    throw new MedusaError(
+                        MedusaError.Types.UNEXPECTED_STATE,
+                        `Refund failure: ${res.data.refund_status}`
+                    )
             }
 
-        } catch (err) {
-
-            this.logger_.error("Error refunding Cashfree order: " + JSON.stringify(err?.response || err?.response?.data?.message || err))
-
-            throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "Error refunding Cashfree order.")
+        } catch (err: any) {
+            const message = err.response?.data || err.message;
+            throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "Error: " + message);
         }
     }
 
@@ -286,18 +306,40 @@ class CashfreePaymentProviderService extends AbstractPaymentProvider<Options> {
         }
 
         const orderData: any = data.data
+
+        this.logger_.info(`Received Cashfree webhook: ${JSON.stringify(payload.data)}`)
+
         try {
             switch (payload.data.type) {
                 case "PAYMENT_SUCCESS_WEBHOOK":
-                    return { action: "captured", data: { session_id: orderData.order.order_tags['session_id'], amount: new BigNumber(orderData.order.order_amount) } }
+                    return {
+                        action: "captured",
+                        data: {
+                            session_id: orderData.order.order_tags['session_id'],
+                            amount: new BigNumber(orderData.order.order_amount)
+                        }
+                    }
                 case "PAYMENT_FAILED_WEBHOOK":
-                    return { action: "failed", data: { session_id: orderData.order.order_tags['session_id'], amount: new BigNumber(orderData.order.order_amount) } }
+                    return {
+                        action: "failed",
+                        data: {
+                            session_id: orderData.order.order_tags['session_id'],
+                            amount: new BigNumber(orderData.order.order_amount)
+                        }
+                    }
                 default:
-                    return { action: "not_supported", data: { session_id: "", amount: new BigNumber(0) } }
+                    return {
+                        action: "not_supported",
+                        data: {
+                            session_id: "",
+                            amount: new BigNumber(0)
+                        }
+                    }
             }
         } catch (e) {
             return { action: "failed", data: { session_id: orderData.order.order_tags['session_id'], amount: new BigNumber(payload.data.amount as number) } }
         }
+
     }
 
     async createAccountHolder() { throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "UNSUPPORTED") }
