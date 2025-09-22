@@ -24,4 +24,9 @@ build
 !.yarn/versions
 
 .medusa
-.jsconfig.json
+.vscode
+
+medusa-config.js
+Dockerfile
+medusa-db.sql
+develop.sh
