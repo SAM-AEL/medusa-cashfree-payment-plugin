@@ -7,14 +7,13 @@ import {
     AuthorizePaymentOutput,
     CapturePaymentInput, CapturePaymentOutput, CancelPaymentInput, CancelPaymentOutput, DeletePaymentInput, DeletePaymentOutput, GetPaymentStatusInput, GetPaymentStatusOutput, RetrievePaymentInput, RetrievePaymentOutput, RefundPaymentInput, RefundPaymentOutput, UpdatePaymentInput, UpdatePaymentOutput, CreateAccountHolderInput, CreateAccountHolderOutput, DeleteAccountHolderInput, DeleteAccountHolderOutput, ListPaymentMethodsInput, ListPaymentMethodsOutput, SavePaymentMethodInput, SavePaymentMethodOutput, UpdateAccountHolderInput, UpdateAccountHolderOutput, ProviderWebhookPayload, WebhookActionResult
 } from "@medusajs/framework/types"
-import { randomUUID } from "crypto";
 import { generateRefundID } from "./utils";
 
 type Options = {
     app_id: string
     secret_key: string
     environment?: "sandbox" | "production"
-    webhook_secret?: string
+    webhook_secret: string
     return_url?: string
     notify_url?: string
 }
@@ -56,35 +55,78 @@ class CashfreePaymentProviderService extends AbstractPaymentProvider<Options> {
         if (!customerData || !customerData.billing_address?.phone || !data?.session_id)
             throw new MedusaError(MedusaError.Types.NOT_FOUND, "Customer not found")
 
+        // Validate and format phone number (remove any non-digit characters except +)
+        const formatPhoneNumber = (phone: string) => {
+            if (!phone) return "";
+            return phone.replace(/[^\d+]/g, '');
+        };
+
+        // Ensure customer name is not empty
+        const customerName = `${customerData.first_name || ""} ${customerData.last_name || ""}`.trim();
+        if (!customerName) {
+            throw new MedusaError(MedusaError.Types.INVALID_DATA, "Customer name is required");
+        }
+
+        // Validate amount is positive
+        const numericAmount = new BigNumber(amount).numeric;
+        if (numericAmount <= 0) {
+            throw new MedusaError(MedusaError.Types.INVALID_DATA, "Amount must be greater than 0");
+        }
+
         const request = {
-            order_amount: new BigNumber(amount).numeric,
+            order_amount: numericAmount,
             order_currency: (currency_code as string).toUpperCase(),
             customer_details: {
                 customer_id: customerData.id,
-                customer_name: customerData.first_name + " " + customerData.last_name,
+                customer_name: customerName,
                 customer_email: customerData.email,
-                customer_phone: customerData.phone as string || customerData.billing_address?.phone as string,
+                customer_phone: formatPhoneNumber(customerData.phone as string || customerData.billing_address?.phone as string),
             },
             order_meta: {
                 return_url: this.options_.return_url || undefined,
-                notify_url: this.options_.notify_url || undefined
+                notify_url: this.options_.notify_url || undefined,
+                payment_methods: undefined // Let Cashfree decide supported methods
             },
             order_tags: { session_id: data?.session_id as string },
         };
 
         try {
+            // Log the request for debugging (without sensitive data)
+            this.logger_.info(`Creating Cashfree order for amount: ${numericAmount} ${currency_code}, customer: ${customerName.substring(0, Math.min(customerName.length, 20))}...`)
+
             const response = await this.client.PGCreateOrder(request);
 
-            this.logger_.warn("Payment Initialized. Payment ID created successfully.")
+            this.logger_.info("Payment Initialized. Payment ID created successfully.")
 
             if (!response.data || !response.data.order_id) {
-                throw new MedusaError(MedusaError.Types.NOT_FOUND, "Payment request failure. Please try again.")
+                throw new MedusaError(MedusaError.Types.NOT_FOUND, "Payment request failure: No order_id returned from Cashfree")
             }
 
             return { id: response.data.order_id, data: response.data as any }
 
         } catch (error: any) {
-            this.logger_.error("Error setting up order request: " + JSON.stringify(error?.response?.data || error))
+            // Enhanced error logging for debugging
+            const errorDetails = {
+                message: error.message,
+                status: error.status,
+                code: error.code,
+                request_amount: numericAmount,
+                request_currency: currency_code,
+                has_customer_name: !!customerName,
+                has_customer_email: !!customerData.email,
+                has_customer_phone: !!formatPhoneNumber(customerData.phone as string || customerData.billing_address?.phone as string)
+            };
+
+            this.logger_.error("Error setting up Cashfree order request: " + JSON.stringify(errorDetails))
+
+            // Provide more specific error messages
+            if (error.message?.includes("UNSUPPORTED")) {
+                throw new MedusaError(
+                    MedusaError.Types.INVALID_DATA,
+                    "Cashfree API returned UNSUPPORTED error. Please check: currency code, amount format, or customer data."
+                );
+            }
+
             throw error;
         }
     }
@@ -308,12 +350,24 @@ class CashfreePaymentProviderService extends AbstractPaymentProvider<Options> {
             headers
         } = payload
 
+        // Enhanced security logging for webhook auditing
+        const sourceIP = headers["x-forwarded-for"] || headers["x-real-ip"] || headers["cf-connecting-ip"] || "unknown";
+        const userAgent = headers["user-agent"] || "unknown";
+        const webhookType = payload.data?.type || "unknown";
+
+        this.logger_.info(`🔐 WEBHOOK_RECEIVED: ${webhookType} from IP: ${sourceIP}, UA: ${userAgent}`);
+
+        let signatureValid = false;
         try {
             this.client.PGVerifyWebhookSignature(
                 headers["x-webhook-signature"] as string,
                 rawData as string,
                 headers["x-webhook-timestamp"] as string);
+
+            signatureValid = true;
+            this.logger_.info(`✅ WEBHOOK_AUTHORIZED: Signature verified for ${webhookType}`);
         } catch (err) {
+            this.logger_.warn(`❌ WEBHOOK_UNAUTHORIZED: Invalid signature for ${webhookType} from ${sourceIP}`);
             throw new MedusaError(
                 MedusaError.Types.UNAUTHORIZED,
                 "Webhook triggered by unauthorized data."
@@ -324,33 +378,43 @@ class CashfreePaymentProviderService extends AbstractPaymentProvider<Options> {
         const orderData: any = data.data
 
         try {
+            let result: WebhookActionResult;
+
             switch (payload.data.type) {
                 case "PAYMENT_SUCCESS_WEBHOOK":
-                    return {
+                    result = {
                         action: "captured",
                         data: {
                             session_id: orderData.order.order_tags['session_id'],
                             amount: new BigNumber(orderData.order.order_amount)
                         }
                     }
+                    this.logger_.info(`💰 WEBHOOK_PROCESSED: Payment captured for session ${orderData.order.order_tags['session_id']}`);
+                    break;
                 case "PAYMENT_FAILED_WEBHOOK":
-                    return {
+                    result = {
                         action: "failed",
                         data: {
                             session_id: orderData.order.order_tags['session_id'],
                             amount: new BigNumber(orderData.order.order_amount)
                         }
                     }
+                    this.logger_.warn(`❌ WEBHOOK_PROCESSED: Payment failed for session ${orderData.order.order_tags['session_id']}`);
+                    break;
                 default:
-                    return {
+                    result = {
                         action: "not_supported",
                         data: {
                             session_id: "",
                             amount: new BigNumber(0)
                         }
                     }
+                    this.logger_.info(`⚠️ WEBHOOK_PROCESSED: Unsupported webhook type ${payload.data.type}`);
             }
+
+            return result;
         } catch (e) {
+            this.logger_.error(`💥 WEBHOOK_ERROR: Failed to process webhook ${payload.data.type}: ${e.message}`);
             return { action: "failed", data: { session_id: orderData.order.order_tags['session_id'], amount: new BigNumber(payload.data.amount as number) } }
         }
 
@@ -387,10 +451,10 @@ class CashfreePaymentProviderService extends AbstractPaymentProvider<Options> {
             )
         }
 
-        if (webhook_secret && typeof webhook_secret !== "string") {
+        if (!webhook_secret || typeof webhook_secret !== "string") {
             throw new MedusaError(
                 MedusaError.Types.INVALID_DATA,
-                "`webhook_secret` must be a string if provided."
+                "Cashfree requires a valid `webhook_secret` (string) in the options."
             )
         }
 

@@ -37,6 +37,31 @@
 
 - ⚡ **Real-time Updates** - _Instant payment status synchronization_
 
+## 📝 Changelog
+
+### **Version 1.0.4** (Latest)
+- **🔒 Security Enhancements**
+  - Fixed webhook secret validation (now required for security)
+  - Enhanced sensitive data protection in error logging
+  - Improved cryptographic security for refund ID generation
+  - Added comprehensive input validation and sanitization
+
+- **📊 Enhanced Monitoring**
+  - Added detailed webhook security logging with IP tracking
+  - Improved error messages for better debugging
+  - Added request validation logging for troubleshooting
+
+- **🐛 Bug Fixes**
+  - Fixed "UNSUPPORTED" error with better request formatting
+  - Enhanced phone number formatting for Cashfree API
+  - Improved customer name handling and validation
+
+### **Version 1.0.3**
+- Initial release with core payment functionality
+- Webhook signature verification
+- Basic refund processing
+- Medusa v2 compatibility
+
 ## 📋 Prerequisites
 
 - [MedusaJS](https://docs.medusajs.com/) 2 store
@@ -136,7 +161,7 @@ CASHFREE_NOTIFY_URL=https://your-store-domain.com/hooks/payment/cashfree_cashfre
 | `app_id`         | string | ✅       | -         | Your Cashfree App ID                                                    |
 | `secret_key`     | string | ✅       | -         | Your Cashfree Secret Key                                                |
 | `environment`    | string | ❌       | `sandbox` | Environment to use (`sandbox` or `production`)                          |
-| `webhook_secret` | string | ❌       | -         | Webhook secret for signature verification                               |
+| `webhook_secret` | string | ✅       | -         | Webhook secret for signature verification (REQUIRED for security)      |
 | `return_url`     | string | ❌       | -         | URL to redirect the customer to after payment is complete               |
 | `notify_url`     | string | ❌       | -         | URL to receive webhook notifications from Cashfree about payment status |
 
