@@ -94,7 +94,10 @@ class CashfreePaymentProviderService extends AbstractPaymentProvider<Options> {
             // Log the request for debugging (without sensitive data)
             this.logger_.info(`Creating Cashfree order for amount: ${numericAmount} ${currency_code}, customer: ${customerName.substring(0, Math.min(customerName.length, 20))}...`)
 
-            const response = await this.client.PGCreateOrder(request);
+            // Idempotency: Use session_id as the key to prevent duplicate orders for the same session
+            const idempotencyKey = data?.session_id as string;
+
+            const response = await this.client.PGCreateOrder(request, idempotencyKey);
 
             this.logger_.info("Payment Initialized. Payment ID created successfully.")
 
@@ -102,7 +105,16 @@ class CashfreePaymentProviderService extends AbstractPaymentProvider<Options> {
                 throw new MedusaError(MedusaError.Types.NOT_FOUND, "Payment request failure: No order_id returned from Cashfree")
             }
 
-            return { id: response.data.order_id, data: response.data as any }
+            const responseData = response.data as any;
+            return {
+                id: responseData.order_id,
+                data: {
+                    ...responseData,
+                    // Explicitly expose these for storefront use
+                    payment_session_id: responseData.payment_session_id,
+                    payment_link: responseData.payment_link
+                }
+            }
 
         } catch (error: any) {
             // Enhanced error logging for debugging
@@ -132,8 +144,31 @@ class CashfreePaymentProviderService extends AbstractPaymentProvider<Options> {
     }
 
     async authorizePayment(input: AuthorizePaymentInput): Promise<AuthorizePaymentOutput> {
-        const externalId = input.data?.order_id
-        return { data: { id: externalId }, status: "authorized" }
+        const externalId = input.data?.order_id as string
+        if (!externalId) throw new MedusaError(MedusaError.Types.INVALID_DATA, "Missing order_id for authorization")
+
+        try {
+            const response = await this.client.PGFetchOrder(externalId)
+            const status = response?.data?.order_status
+
+            switch (status) {
+                case "PAID":
+                    return { data: { ...response.data, id: externalId }, status: "authorized" }
+                case "ACTIVE":
+                case "PENDING":
+                    // Payment is still in progress (user on redirect page)
+                    return { data: { ...response.data, id: externalId }, status: "pending" }
+                case "EXPIRED":
+                    return { data: { ...response.data, id: externalId }, status: "error" }
+                case "TERMINATED":
+                    return { data: { ...response.data, id: externalId }, status: "canceled" }
+                default:
+                    return { data: { ...response.data, id: externalId }, status: "error" }
+            }
+        } catch (error: any) {
+            this.logger_.error(`Authorization failed for order ${externalId}: ${error.message}`)
+            throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, "Failed to authorize payment")
+        }
     }
 
     async capturePayment(input: CapturePaymentInput): Promise<CapturePaymentOutput> {
@@ -310,7 +345,8 @@ class CashfreePaymentProviderService extends AbstractPaymentProvider<Options> {
 
         try {
 
-            const res = await this.client.PGOrderCreateRefund(externalId, refundReq)
+            // Idempotency: Use refundId to prevent duplicate refunds
+            const res = await this.client.PGOrderCreateRefund(externalId, refundReq, refundId)
 
             switch (res.data.refund_status) {
                 case "SUCCESS":
