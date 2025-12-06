@@ -1,0 +1,9 @@
+{
+  "version": "v1",
+  "packages": {
+    "medusa-cashfree-payment-plugin": {
+      "signature": "0a09020d9979f7849d736bebaa07d311",
+      "file": true
+    }
+  }
+}
