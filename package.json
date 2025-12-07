@@ -2,6 +2,7 @@
     "name": "medusa-cashfree-payment-plugin",
     "version": "1.1.0",
     "description": "Cashfree Payment Plugin for MedusaJS 2",
+    "main": "./.medusa/server/src/providers/cashfree/index.js",
     "author": "SAM-AEL",
     "homepage": "https://github.com/SAM-AEL",
     "repository": "https://github.com/SAM-AEL/medusa-cashfree-payment-plugin",
@@ -11,16 +12,16 @@
     ],
     "exports": {
         "./package.json": "./package.json",
+        ".": "./.medusa/server/src/providers/cashfree/index.js",
         "./workflows": "./.medusa/server/src/workflows/index.js",
         "./.medusa/server/src/modules/*": "./.medusa/server/src/modules/*/index.js",
-        "./modules/*": "./.medusa/server/src/modules/*/index.js",
         "./providers/*": "./.medusa/server/src/providers/*/index.js",
-        "./*": "./.medusa/server/src/*.js",
         "./admin": {
             "import": "./.medusa/server/src/admin/index.mjs",
             "require": "./.medusa/server/src/admin/index.js",
             "default": "./.medusa/server/src/admin/index.js"
-        }
+        },
+        "./*": "./.medusa/server/src/*.js"
     },
     "keywords": [
         "medusa",
@@ -38,10 +39,10 @@
         "@medusajs/admin-sdk": "2.11.2",
         "@medusajs/cli": "2.11.2",
         "@medusajs/framework": "2.11.2",
+        "@medusajs/icons": "2.11.2",
         "@medusajs/medusa": "2.11.2",
         "@medusajs/test-utils": "2.11.2",
         "@medusajs/ui": "4.0.25",
-        "@medusajs/icons": "2.11.2",
         "@swc/core": "1.5.7",
         "@types/node": "^20.0.0",
         "@types/react": "^18.3.2",
@@ -69,6 +70,7 @@
         "node": ">=20"
     },
     "dependencies": {
-        "cashfree-pg": "^5.0.8"
+        "cashfree-pg": "^5.0.8",
+        "medusa-cashfree-payment-plugin": "file:.yalc/medusa-cashfree-payment-plugin"
     }
 }

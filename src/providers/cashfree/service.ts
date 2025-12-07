@@ -456,11 +456,11 @@ class CashfreePaymentProviderService extends AbstractPaymentProvider<Options> {
 
     }
 
-    async createAccountHolder() { throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "UNSUPPORTED") }
-    async updateAccountHolder() { throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "UNSUPPORTED") }
-    async deleteAccountHolder() { throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "UNSUPPORTED") }
-    async savePaymentMethod() { throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "UNSUPPORTED") }
-    async listPaymentMethods() { throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "UNSUPPORTED") }
+    async createAccountHolder() { return {} as any }
+    async updateAccountHolder() { return {} as any }
+    async deleteAccountHolder() { return {} as any }
+    async savePaymentMethod() { return {} as any }
+    async listPaymentMethods() { return {} as any }
 
     // Validation Method
     async validateOptions(options: Record<any, any>): Promise<void> {

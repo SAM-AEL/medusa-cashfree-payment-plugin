@@ -1,57 +1,57 @@
 {
-  "name": "medusa-cashfree-payment-plugin",
-  "version": "1.0.5",
-  "description": "Cashfree Payment Plugin for MedusaJS 2",
-  "author": "SAM-AEL",
-  "homepage": "https://github.com/SAM-AEL",
-  "repository": "https://github.com/SAM-AEL/medusa-cashfree-payment-plugin",
-  "license": "MIT",
-  "files": [
-    ".medusa/server"
-  ],
-  "main": "./.medusa/server/src/providers/cashfree/index.js",
-  "exports": {
-    ".": "./.medusa/server/src/providers/cashfree/index.js",
-    "./package.json": "./package.json",
-    "./workflows": "./.medusa/server/src/workflows/index.js",
-    "./.medusa/server/src/modules/*": "./.medusa/server/src/modules/*/index.js",
-    "./modules/*": "./.medusa/server/src/modules/*/index.js",
-    "./providers/*": "./.medusa/server/src/providers/*/index.js",
-    "./*": "./.medusa/server/src/*.js"
-  },
-  "keywords": [
-    "medusa",
-    "plugin",
-    "medusa-plugin",
-    "medusa-v2",
-    "medusa-plugin-payment"
-  ],
-  "scripts": {
-    "build": "medusa plugin:build",
-    "dev": "medusa plugin:develop",
-    "prepublishOnly": "medusa plugin:build"
-  },
-  "peerDependencies": {
-    "@medusajs/admin-sdk": "2.10.2",
-    "@medusajs/cli": "2.10.2",
-    "@medusajs/framework": "2.10.2",
-    "@medusajs/icons": "2.10.2",
-    "@medusajs/medusa": "2.10.2",
-    "@medusajs/test-utils": "2.10.2",
-    "@medusajs/ui": "4.0.3",
-    "@mikro-orm/cli": "6.4.3",
-    "@mikro-orm/core": "6.4.3",
-    "@mikro-orm/knex": "6.4.3",
-    "@mikro-orm/migrations": "6.4.3",
-    "@mikro-orm/postgresql": "6.4.3",
-    "awilix": "^8.0.1",
-    "pg": "^8.13.0"
-  },
-  "engines": {
-    "node": ">=20"
-  },
-  "dependencies": {
-    "cashfree-pg": "^5.0.8"
-  },
-  "yalcSig": "0a09020d9979f7849d736bebaa07d311"
+    "name": "medusa-cashfree-payment-plugin",
+    "version": "1.1.0",
+    "description": "Cashfree Payment Plugin for MedusaJS 2",
+    "main": "./.medusa/server/src/providers/cashfree/index.js",
+    "author": "SAM-AEL",
+    "homepage": "https://github.com/SAM-AEL",
+    "repository": "https://github.com/SAM-AEL/medusa-cashfree-payment-plugin",
+    "license": "MIT",
+    "files": [
+        ".medusa/server"
+    ],
+    "exports": {
+        "./package.json": "./package.json",
+        ".": "./.medusa/server/src/providers/cashfree/index.js",
+        "./workflows": "./.medusa/server/src/workflows/index.js",
+        "./.medusa/server/src/modules/*": "./.medusa/server/src/modules/*/index.js",
+        "./providers/*": "./.medusa/server/src/providers/*/index.js",
+        "./admin": {
+            "import": "./.medusa/server/src/admin/index.mjs",
+            "require": "./.medusa/server/src/admin/index.js",
+            "default": "./.medusa/server/src/admin/index.js"
+        },
+        "./*": "./.medusa/server/src/*.js"
+    },
+    "keywords": [
+        "medusa",
+        "plugin",
+        "medusa-plugin",
+        "medusa-v2",
+        "medusa-plugin-payment"
+    ],
+    "scripts": {
+        "build": "medusa plugin:build",
+        "dev": "medusa plugin:develop",
+        "prepublishOnly": "medusa plugin:build"
+    },
+    "peerDependencies": {
+        "@medusajs/admin-sdk": "2.11.2",
+        "@medusajs/cli": "2.11.2",
+        "@medusajs/framework": "2.11.2",
+        "@medusajs/test-utils": "2.11.2",
+        "@medusajs/medusa": "2.11.2",
+        "@medusajs/ui": "4.0.25",
+        "@medusajs/icons": "2.11.2",
+        "awilix": "^8.0.1",
+        "pg": "^8.13.0"
+    },
+    "engines": {
+        "node": ">=20"
+    },
+    "dependencies": {
+        "cashfree-pg": "^5.0.8",
+        "medusa-cashfree-payment-plugin": "file:.yalc/medusa-cashfree-payment-plugin"
+    },
+    "yalcSig": "abed906595b5e4f39b077bff696bf51a"
 }
