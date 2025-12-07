@@ -1,6 +1,6 @@
 {
     "name": "medusa-cashfree-payment-plugin",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "Cashfree Payment Plugin for MedusaJS 2",
     "main": "./.medusa/server/src/providers/cashfree/index.js",
     "author": "SAM-AEL",
